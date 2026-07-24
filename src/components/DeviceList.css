@@ -1,0 +1,193 @@
+.device-list {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}
+
+.device-list__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.device-list__head h2 {
+  margin: 0;
+  color: var(--text-h);
+}
+
+.device-list__refresh {
+  font: inherit;
+  font-size: 15px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  transition: box-shadow 0.2s;
+}
+.device-list__refresh:hover {
+  box-shadow: var(--shadow);
+}
+
+/* --- Grid of cards --- */
+.device-list__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+/* --- Full-panel states (loading / error / empty) --- */
+.device-list__state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 56px 20px;
+  text-align: center;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.device-list__state p {
+  margin: 0;
+}
+.device-list__state--error {
+  color: #b4232a;
+  border-color: rgba(180, 35, 42, 0.35);
+  background: rgba(180, 35, 42, 0.06);
+}
+.device-list__state button {
+  font: inherit;
+  font-size: 15px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+}
+
+/* Inline banner shown above stale cards when a poll fails. */
+.device-list__banner {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 15px;
+  color: #b4232a;
+  background: rgba(180, 35, 42, 0.06);
+  border: 1px solid rgba(180, 35, 42, 0.35);
+}
+
+/* --- Card --- */
+.ac-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+}
+
+.ac-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ac-card__titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.ac-card__location {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.2;
+  color: var(--text-h);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ac-card__id {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text);
+}
+
+.ac-card__meta {
+  display: flex;
+  gap: 24px;
+  margin: 0;
+}
+.ac-card__meta dt {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+.ac-card__meta dd {
+  margin: 2px 0 0;
+  font-size: 15px;
+  color: var(--text-h);
+}
+
+/* --- Status indicator --- */
+.ac-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+.ac-status__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #9aa0a6; /* default / offline */
+}
+.ac-status--online .ac-status__dot {
+  background: #2fae5f;
+}
+.ac-status--stale .ac-status__dot {
+  background: #e0b400;
+}
+.ac-status--offline .ac-status__dot {
+  background: #9aa0a6;
+}
+
+/* --- Badges --- */
+.ac-badge {
+  align-self: flex-start;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.ac-badge--warn {
+  color: #8a5a00;
+  background: rgba(224, 180, 0, 0.16);
+  border: 1px solid rgba(224, 180, 0, 0.5);
+}
+
+/* --- Spinner --- */
+.spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
