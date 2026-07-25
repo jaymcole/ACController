@@ -47,7 +47,7 @@ export function DeviceList() {
           {error && <p className="device-list__banner" role="alert">{error}</p>}
           <div className="device-list__grid">
             {devices.map((device) => (
-              <AcCard key={device.id} device={device} />
+              <AcCard key={device.id} device={device} onChanged={refresh} />
             ))}
           </div>
         </>

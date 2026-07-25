@@ -20,6 +20,20 @@ function byLocation(a: Device, b: Device): number {
 }
 
 /**
+ * Merge a freshly fetched list over the previously-known one. A device that was
+ * known but is absent from the new response is kept and flagged `offline`,
+ * rather than silently vanishing from the fleet — so its card's status
+ * indicator flips to offline instead of the card disappearing.
+ */
+function mergeDevices(prev: Device[], fetched: Device[]): Device[] {
+  const fetchedIds = new Set(fetched.map((d) => d.id))
+  const dropped = prev
+    .filter((d) => !fetchedIds.has(d.id))
+    .map((d) => (d.status === 'offline' ? d : { ...d, status: 'offline' as const }))
+  return [...fetched, ...dropped].sort(byLocation)
+}
+
+/**
  * Fetches the discovered controllers from the bridge and keeps the list fresh
  * by polling every 10 seconds. Cleans up its timer and any in-flight request
  * on unmount.
@@ -43,7 +57,7 @@ export function useDevices(): UseDevicesResult {
     try {
       const { devices: fetched, count: total } = await getDevices(controller.signal)
       if (!mountedRef.current || controller.signal.aborted) return
-      setDevices([...fetched].sort(byLocation))
+      setDevices((prev) => mergeDevices(prev, fetched))
       setCount(total)
       setError(null)
     } catch (err) {

@@ -177,6 +177,48 @@
   border: 1px solid rgba(224, 180, 0, 0.5);
 }
 
+/* --- Power actions --- */
+.ac-card__actions {
+  display: flex;
+  gap: 10px;
+}
+.ac-btn {
+  flex: 1;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  transition: box-shadow 0.2s, opacity 0.2s;
+}
+.ac-btn:hover:not(:disabled) {
+  box-shadow: var(--shadow);
+}
+.ac-btn:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+.ac-btn--on {
+  color: #1f7a43;
+  border-color: rgba(47, 174, 95, 0.5);
+  background: rgba(47, 174, 95, 0.1);
+}
+.ac-btn--off {
+  color: #b4232a;
+  border-color: rgba(180, 35, 42, 0.4);
+  background: rgba(180, 35, 42, 0.07);
+}
+
+.ac-card__action-error {
+  margin: 0;
+  font-size: 13px;
+  color: #b4232a;
+}
+
 /* --- Spinner --- */
 .spinner {
   width: 28px;
