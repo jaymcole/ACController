@@ -199,7 +199,7 @@ export interface ConfigInput {
 // Fallbacks used only when turning a unit on with no prior config to reuse —
 // the bridge requires a mode + temp when power is 'on'.
 const DEFAULT_ON_MODE: Mode = 'cool'
-const DEFAULT_ON_TEMP = 22
+const DEFAULT_ON_TEMP = 16
 
 /**
  * Build the config body for flipping a unit's power. Turning off needs nothing
