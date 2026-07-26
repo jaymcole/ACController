@@ -1,0 +1,202 @@
+/* AcCard2 — a single AC controller rendered as a flippable card.
+   The front holds the controls; the info button flips it to reveal the
+   back (location + network address). Status/spinner styles are shared from
+   DeviceList.css, which is always mounted alongside this component. */
+
+.ac2 {
+  perspective: 1200px;
+}
+
+/* Both faces share one grid cell so the card sizes to the taller face and the
+   3D flip has nothing to jump against. */
+.ac2__inner {
+  display: grid;
+  transform-style: preserve-3d;
+  transition: transform 0.5s ease;
+}
+.ac2__inner.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.ac2__face {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  text-align: left;
+  backface-visibility: hidden;
+}
+.ac2__back {
+  transform: rotateY(180deg);
+}
+
+/* Route pointer events to whichever face is showing. */
+.ac2__front {
+  pointer-events: auto;
+}
+.ac2__back {
+  pointer-events: none;
+}
+.ac2__inner.is-flipped .ac2__front {
+  pointer-events: none;
+}
+.ac2__inner.is-flipped .ac2__back {
+  pointer-events: auto;
+}
+
+/* --- Header: name (left) / status (right) --- */
+.ac2__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.ac2__name {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.2;
+  color: var(--text-h);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ac2__sync {
+  align-self: flex-start;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: #8a5a00;
+  background: rgba(224, 180, 0, 0.16);
+  border: 1px solid rgba(224, 180, 0, 0.5);
+}
+
+/* --- Temperature: readout (left) + slider (right) --- */
+.ac2__temp {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.ac2__temp-readout {
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+.ac2__temp-readout::after {
+  content: '\00b0';
+}
+.ac2__temp-slider {
+  flex: 1;
+  min-width: 0;
+}
+
+/* --- Shared button base --- */
+.ac2__btn {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  transition: box-shadow 0.2s, opacity 0.2s;
+}
+.ac2__btn:hover:not(:disabled) {
+  box-shadow: var(--shadow);
+}
+.ac2__btn:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+/* --- Mode buttons: four columns sharing the row equally --- */
+.ac2__modes {
+  display: flex;
+  gap: 8px;
+}
+.ac2__mode {
+  flex: 1;
+}
+.ac2__mode.is-active {
+  color: var(--accent);
+  border-color: var(--accent-border);
+  background: var(--accent-bg);
+}
+
+/* --- Bottom row: power (grows) + resend + info --- */
+.ac2__actions {
+  display: flex;
+  gap: 8px;
+}
+.ac2__power {
+  flex: 1;
+}
+.ac2__power.is-on {
+  color: #1f7a43;
+  border-color: rgba(47, 174, 95, 0.5);
+  background: rgba(47, 174, 95, 0.1);
+}
+.ac2__icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  padding: 8px;
+}
+.ac2__icon-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.ac2__error {
+  margin: 0;
+  font-size: 13px;
+  color: #b4232a;
+}
+
+/* --- Back face --- */
+.ac2__back-title {
+  margin: 0;
+  font-size: 16px;
+  color: var(--text-h);
+}
+.ac2__details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+}
+/* Two-column rows: field label on the left, value on the right. */
+.ac2__detail-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.ac2__details dt {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  flex-shrink: 0;
+}
+.ac2__details dd {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 15px;
+  color: var(--text-h);
+  text-align: right;
+  word-break: break-all;
+}
+.ac2__back-close {
+  align-self: flex-start;
+  margin-top: auto;
+}

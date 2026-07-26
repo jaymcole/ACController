@@ -1,5 +1,5 @@
 import { useDevices } from '../hooks/useDevices'
-import { AcCard } from './AcCard'
+import { AcCard2 } from './AcCard2'
 import './DeviceList.css'
 
 /** Fetches and displays the fleet of discovered AC controllers. */
@@ -47,7 +47,7 @@ export function DeviceList() {
           {error && <p className="device-list__banner" role="alert">{error}</p>}
           <div className="device-list__grid">
             {devices.map((device) => (
-              <AcCard key={device.id} device={device} onChanged={refresh} />
+              <AcCard2 key={device.id} device={device} onChanged={refresh} />
             ))}
           </div>
         </>

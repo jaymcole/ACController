@@ -1,0 +1,59 @@
+/* Presentational slider built on Radix. Themed via the app's design tokens so
+   it tracks light/dark automatically. */
+.thumb-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.thumb-slider__label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--text);
+}
+.thumb-slider__label strong {
+  color: var(--text-h);
+}
+
+.thumb-slider__root {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 20px;
+  user-select: none;
+  touch-action: none;
+}
+
+.thumb-slider__track {
+  position: relative;
+  flex-grow: 1;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--border);
+}
+
+.thumb-slider__range {
+  position: absolute;
+  height: 100%;
+  border-radius: 9999px;
+  background: var(--accent);
+}
+
+.thumb-slider__thumb {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 2px solid var(--accent);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  outline: none;
+}
+.thumb-slider__thumb:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

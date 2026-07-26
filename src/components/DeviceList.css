@@ -81,62 +81,7 @@
   border: 1px solid rgba(180, 35, 42, 0.35);
 }
 
-/* --- Card --- */
-.ac-card {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 18px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--bg);
-}
-
-.ac-card__head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.ac-card__titles {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-.ac-card__location {
-  margin: 0;
-  font-size: 18px;
-  line-height: 1.2;
-  color: var(--text-h);
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.ac-card__id {
-  font-family: var(--mono);
-  font-size: 13px;
-  color: var(--text);
-}
-
-.ac-card__meta {
-  display: flex;
-  gap: 24px;
-  margin: 0;
-}
-.ac-card__meta dt {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--text);
-}
-.ac-card__meta dd {
-  margin: 2px 0 0;
-  font-size: 15px;
-  color: var(--text-h);
-}
-
-/* --- Status indicator --- */
+/* --- Status indicator (shared with AcCard2) --- */
 .ac-status {
   display: inline-flex;
   align-items: center;
@@ -160,63 +105,6 @@
 }
 .ac-status--offline .ac-status__dot {
   background: #9aa0a6;
-}
-
-/* --- Badges --- */
-.ac-badge {
-  align-self: flex-start;
-  margin: 0;
-  font-size: 12px;
-  font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 999px;
-}
-.ac-badge--warn {
-  color: #8a5a00;
-  background: rgba(224, 180, 0, 0.16);
-  border: 1px solid rgba(224, 180, 0, 0.5);
-}
-
-/* --- Power actions --- */
-.ac-card__actions {
-  display: flex;
-  gap: 10px;
-}
-.ac-btn {
-  flex: 1;
-  font: inherit;
-  font-size: 15px;
-  font-weight: 600;
-  padding: 8px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text-h);
-  transition: box-shadow 0.2s, opacity 0.2s;
-}
-.ac-btn:hover:not(:disabled) {
-  box-shadow: var(--shadow);
-}
-.ac-btn:disabled {
-  cursor: default;
-  opacity: 0.55;
-}
-.ac-btn--on {
-  color: #1f7a43;
-  border-color: rgba(47, 174, 95, 0.5);
-  background: rgba(47, 174, 95, 0.1);
-}
-.ac-btn--off {
-  color: #b4232a;
-  border-color: rgba(180, 35, 42, 0.4);
-  background: rgba(180, 35, 42, 0.07);
-}
-
-.ac-card__action-error {
-  margin: 0;
-  font-size: 13px;
-  color: #b4232a;
 }
 
 /* --- Spinner --- */
