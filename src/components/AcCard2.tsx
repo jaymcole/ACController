@@ -1,6 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
+  carryOverOptionals,
+  isControllableMode,
   setDeviceConfig,
+  type AcConfig,
   type ConfigInput,
   type Device,
   type DeviceStatus,
@@ -37,6 +40,22 @@ const cToF = (c: number) => Math.round((c * 9) / 5 + 32)
 const fToC = (f: number) => Math.round(((f - 32) * 5) / 9)
 
 /**
+ * The AC's best-known *actual* state, which the card should display.
+ *
+ * When the unit is in sync, desired and reported agree, and right after a UI
+ * push `desiredConfig` is the freshest truth (the unit's own report lags by up
+ * to one reconcile poll). But when the unit has drifted — e.g. someone used the
+ * physical remote — `reportedConfig` is the ground truth of what the machine is
+ * actually doing, so we prefer it. Either field may be null early on, so we fall
+ * back to whichever exists.
+ */
+function effectiveConfig(device: Device): AcConfig | null {
+  return device.inSync
+    ? device.desiredConfig ?? device.reportedConfig
+    : device.reportedConfig ?? device.desiredConfig
+}
+
+/**
  * A single AC controller rendered as a flippable control card.
  *
  * The card holds a local *draft* of the desired config (power / mode / temp),
@@ -51,7 +70,9 @@ export function AcCard2({
   /** Called after a successful config change so the list can refresh. */
   onChanged?: () => void
 }) {
-  const base = device.desiredConfig ?? device.reportedConfig
+  // The AC's actual current state — what the controls should mirror. Also the
+  // source we preserve fan/vane from when building a push.
+  const base = effectiveConfig(device)
 
   const [power, setPower] = useState<Power>(base?.power ?? 'off')
   const [mode, setMode] = useState<Mode>(base?.mode ?? 'cool')
@@ -63,6 +84,26 @@ export function AcCard2({
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Re-sync the draft controls when the device's actual state changes under us
+  // (e.g. a reconcile poll learns the physical remote was used). The card
+  // instance persists across polls — it's keyed by device id — so without this
+  // the controls would stay frozen at their mount-time seed. We skip syncing
+  // while a push is in flight so a background poll can't clobber the optimistic
+  // state the user just set. Keyed on the concrete values (not object identity),
+  // which are primitives, so it only fires on a real change.
+  const syncPower = base?.power ?? 'off'
+  const syncMode = base?.mode ?? 'cool'
+  const syncTempF = clamp(base?.temp != null ? cToF(base.temp) : DEFAULT_TEMP, TEMP_MIN, TEMP_MAX)
+  useEffect(() => {
+    if (pending) return
+    setPower(syncPower)
+    // reportedConfig may carry 'fan' (fan-only), which isn't a button here —
+    // leave the current mode selection as-is rather than forcing an invalid one.
+    if (isControllableMode(syncMode)) setMode(syncMode)
+    setTemp(syncTempF)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [syncPower, syncMode, syncTempF])
+
   const statusLabel = STATUS_LABEL[device.status] ?? device.status
 
   /**
@@ -73,16 +114,19 @@ export function AcCard2({
     const nextPower = overrides.power ?? power
     if (nextPower === 'off') return { schema: 1, power: 'off' }
 
+    // The draft mode is normally a button mode, but it can be seeded from a
+    // reported fan-only ('fan') state; fall back to a valid mode so the push
+    // isn't rejected.
+    const nextMode = overrides.mode ?? mode
     const cfg: ConfigInput = {
       schema: 1,
       power: 'on',
-      mode: overrides.mode ?? mode,
+      mode: isControllableMode(nextMode) ? nextMode : 'cool',
       // Overrides and draft state are °F; the bridge expects °C.
       temp: fToC(overrides.temp ?? temp),
     }
-    if (base?.fan != null) cfg.fan = base.fan
-    if (base?.vaneVert != null) cfg.vaneVert = base.vaneVert
-    if (base?.vaneHoriz != null) cfg.vaneHoriz = base.vaneHoriz
+    // Preserve only bridge-valid fan/vane values from the actual state.
+    carryOverOptionals(cfg, base)
     return cfg
   }
 
@@ -133,12 +177,6 @@ export function AcCard2({
               {statusLabel}
             </span>
           </header>
-
-          {!device.inSync && (
-            <p className="ac2__sync" title="Unit has drifted from its desired state">
-              Out of sync
-            </p>
-          )}
 
           <div className="ac2__temp">
             <span className="ac2__temp-readout">{temp}</span>

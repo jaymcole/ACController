@@ -201,6 +201,32 @@ export interface ConfigInput {
 const DEFAULT_ON_MODE: Mode = 'cool'
 const DEFAULT_ON_TEMP = 16
 
+// The value vocabularies the bridge's schema-v1 validator accepts. A config
+// *reported* by a unit can legitimately carry firmware-only values that these
+// don't include — notably fan 'silent' and mode 'fan' (fan-only), which the AC's
+// physical remote can set — so anything reused from a reported config must be
+// filtered against these or the bridge will reject the push with a 400.
+const CONTROLLABLE_MODES: readonly Mode[] = ['auto', 'cool', 'heat', 'dry']
+const VALID_FAN = new Set(['auto', '1', '2', '3', '4'])
+const VALID_VANE_VERT = new Set(['auto', '1', '2', '3', '4', '5', 'swing'])
+const VALID_VANE_HORIZ = new Set(['left', 'mleft', 'middle', 'mright', 'right', 'wide', 'auto'])
+
+/** True if `m` is a mode the bridge accepts on a push (excludes fan-only). */
+export function isControllableMode(m: Mode | null | undefined): m is Mode {
+  return m != null && CONTROLLABLE_MODES.includes(m)
+}
+
+/**
+ * Copy fan/vane settings from a prior config onto a push body, but only values
+ * the bridge validator accepts — dropping firmware-only ones (e.g. fan
+ * 'silent') so reusing an observed remote state can't produce a rejected push.
+ */
+export function carryOverOptionals(cfg: ConfigInput, base: AcConfig | null | undefined): void {
+  if (base?.fan != null && VALID_FAN.has(base.fan)) cfg.fan = base.fan
+  if (base?.vaneVert != null && VALID_VANE_VERT.has(base.vaneVert)) cfg.vaneVert = base.vaneVert
+  if (base?.vaneHoriz != null && VALID_VANE_HORIZ.has(base.vaneHoriz)) cfg.vaneHoriz = base.vaneHoriz
+}
+
 /**
  * Build the config body for flipping a unit's power. Turning off needs nothing
  * but `power: 'off'`. Turning on requires a mode + temp, so we reuse the
@@ -214,12 +240,10 @@ export function powerConfig(device: Device, power: Power): ConfigInput {
   const cfg: ConfigInput = {
     schema: 1,
     power: 'on',
-    mode: base?.mode ?? DEFAULT_ON_MODE,
+    mode: isControllableMode(base?.mode) ? base!.mode : DEFAULT_ON_MODE,
     temp: base?.temp ?? DEFAULT_ON_TEMP,
   }
-  if (base?.fan != null) cfg.fan = base.fan
-  if (base?.vaneVert != null) cfg.vaneVert = base.vaneVert
-  if (base?.vaneHoriz != null) cfg.vaneHoriz = base.vaneHoriz
+  carryOverOptionals(cfg, base)
   return cfg
 }
 

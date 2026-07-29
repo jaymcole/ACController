@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getDevices, type Device } from '../api/bridge'
 
-const POLL_INTERVAL_MS = 10_000
+// Matches the bridge's own unit-reconcile cadence: the bridge only refreshes its
+// view of each unit every ~2s, so polling it faster just re-fetches identical
+// data. 2s keeps the UI within ~one bridge cycle of the truth. Fetches are tiny
+// (a small JSON list over the LAN) and a new poll aborts any still-in-flight one,
+// so this can go lower if desired without piling up requests.
+const POLL_INTERVAL_MS = 2_000
 
 export interface UseDevicesResult {
   devices: Device[]
