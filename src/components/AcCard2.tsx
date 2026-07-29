@@ -55,6 +55,37 @@ function effectiveConfig(device: Device): AcConfig | null {
     : device.reportedConfig ?? device.desiredConfig
 }
 
+type SignalQuality = 'excellent' | 'good' | 'fair' | 'weak' | 'unknown'
+
+/**
+ * Map a WiFi RSSI (dBm) to a display string + quality bucket for the info panel.
+ * Thresholds match the firmware debugging we did: below ~-78 dBm the ESP32's link
+ * gets unreliable, so "weak" is the band worth chasing down.
+ */
+function rssiInfo(rssi: number | null): { text: string; quality: SignalQuality } {
+  if (rssi == null) return { text: '—', quality: 'unknown' }
+  let quality: SignalQuality
+  if (rssi >= -60) quality = 'excellent'
+  else if (rssi >= -70) quality = 'good'
+  else if (rssi >= -78) quality = 'fair'
+  else quality = 'weak'
+  const label = quality[0].toUpperCase() + quality.slice(1)
+  return { text: `${rssi} dBm · ${label}`, quality }
+}
+
+/** Format the unit's uptime (seconds) compactly, e.g. "3d 4h", "2h 15m", "45s". */
+function formatUptime(sec: number | null): string {
+  if (sec == null) return '—'
+  const d = Math.floor(sec / 86400)
+  const h = Math.floor((sec % 86400) / 3600)
+  const m = Math.floor((sec % 3600) / 60)
+  const s = Math.floor(sec % 60)
+  if (d > 0) return `${d}d ${h}h`
+  if (h > 0) return `${h}h ${m}m`
+  if (m > 0) return `${m}m ${s}s`
+  return `${s}s`
+}
+
 /**
  * A single AC controller rendered as a flippable control card.
  *
@@ -245,10 +276,12 @@ export function AcCard2({
           )}
         </div>
 
-        {/* --- Back: address details --- */}
+        {/* --- Back: address details. Title + table scroll; Back button is
+            pinned so it's always reachable regardless of list length. --- */}
         <div className="ac2__face ac2__back" aria-hidden={!flipped}>
-          <h3 className="ac2__back-title">{device.location || 'Unknown location'}</h3>
-          <dl className="ac2__details">
+          <div className="ac2__back-scroll">
+            <h3 className="ac2__back-title">{device.location || 'Unknown location'}</h3>
+            <dl className="ac2__details">
             <div className="ac2__detail-row">
               <dt>Location</dt>
               <dd>{device.location || '—'}</dd>
@@ -261,7 +294,18 @@ export function AcCard2({
               <dt>IP address</dt>
               <dd>{device.ip ? `${device.ip}:${device.port}` : '—'}</dd>
             </div>
-          </dl>
+            <div className="ac2__detail-row">
+              <dt>Signal</dt>
+              <dd className={`ac2__rssi ac2__rssi--${rssiInfo(device.rssi).quality}`}>
+                {rssiInfo(device.rssi).text}
+              </dd>
+            </div>
+            <div className="ac2__detail-row">
+              <dt>Uptime</dt>
+              <dd>{formatUptime(device.uptimeSec)}</dd>
+            </div>
+            </dl>
+          </div>
           <button
             type="button"
             className="ac2__btn ac2__back-close"

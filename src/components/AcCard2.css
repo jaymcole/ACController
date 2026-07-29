@@ -7,9 +7,12 @@
   perspective: 1200px;
 }
 
-/* Both faces share one grid cell so the card sizes to the taller face and the
-   3D flip has nothing to jump against. */
+/* The FRONT drives the card's height (it's the priority). The back is taken out
+   of the size calculation (position:absolute below) and overlaid on the same
+   box, so a longer info list scrolls instead of stretching the card and leaving
+   the front with dead space. */
 .ac2__inner {
+  position: relative;
   display: grid;
   transform-style: preserve-3d;
   transition: transform 0.5s ease;
@@ -30,8 +33,23 @@
   text-align: left;
   backface-visibility: hidden;
 }
+/* Overlay the front's box (which sizes the card). The back itself does NOT
+   scroll — its inner region does, so the Back button stays pinned. */
 .ac2__back {
   transform: rotateY(180deg);
+  position: absolute;
+  inset: 0;
+}
+/* Scrollable region: title + details. Takes the leftover height above the
+   pinned Back button and scrolls when the list is long. min-height:0 lets a
+   flex child actually shrink so overflow kicks in. */
+.ac2__back-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 /* Route pointer events to whichever face is showing. */
@@ -184,6 +202,12 @@
   text-align: right;
   word-break: break-all;
 }
+/* Signal quality: color the value so a poorly-connected unit stands out. */
+.ac2__rssi--excellent,
+.ac2__rssi--good { color: #2ecc71; }
+.ac2__rssi--fair { color: #e0a400; }
+.ac2__rssi--weak { color: #e74c3c; }
+.ac2__rssi--unknown { color: var(--text); }
 .ac2__back-close {
   align-self: flex-start;
   margin-top: auto;
