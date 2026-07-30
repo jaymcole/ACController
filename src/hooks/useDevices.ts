@@ -19,9 +19,16 @@ export interface UseDevicesResult {
   refresh: () => void
 }
 
-/** Sort by location so cards keep a stable order between polls. */
+/**
+ * Sort by location so cards keep a stable order between polls. `location` can be
+ * null for a just-discovered unit before the bridge has learned it, so guard
+ * against that (a raw .localeCompare on null throws and would blank the list),
+ * and tie-break on id so same-location units (5-device fleets are likely to have
+ * a couple) keep a deterministic order instead of swapping between polls.
+ */
 function byLocation(a: Device, b: Device): number {
-  return a.location.localeCompare(b.location)
+  const byLoc = (a.location ?? '').localeCompare(b.location ?? '')
+  return byLoc !== 0 ? byLoc : a.id.localeCompare(b.id)
 }
 
 /**
