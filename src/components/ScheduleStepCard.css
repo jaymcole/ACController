@@ -69,6 +69,20 @@
   height: 16px;
 }
 
+/* Inline "Sent" chip, sits to the left of the send button in the header actions.
+   Eases away via the opacity transition when the --fading modifier is applied. */
+.step-card__sent {
+  font-size: 12px;
+  color: var(--text);
+  white-space: nowrap;
+  opacity: 1;
+  transition: opacity 0.5s ease; /* must match FADE_MS in ScheduleStepCard.tsx */
+}
+.step-card__sent--fading {
+  opacity: 0;
+}
+
+/* Send errors get their own row below the header (they can be long). */
 .step-card__send-status {
   margin: -6px 0 0;
   font-size: 12px;

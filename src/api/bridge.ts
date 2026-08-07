@@ -16,6 +16,16 @@ export type Mode = 'cool' | 'heat' | 'dry' | 'fan' | 'auto'
 export type FanSpeed = string
 export type VanePosition = string
 
+/** What initiated a command sent to a unit. */
+export type CommandSource = 'manual' | 'manual_immediate' | 'scheduled'
+
+/** The most recent command initiated against a unit (from the bridge's log). */
+export interface LastCommand {
+  source: CommandSource
+  /** ISO-8601 timestamp of when the command was initiated. */
+  at: string
+}
+
 /** A desired or reported AC configuration. Any unlearned field may be null. */
 export interface AcConfig {
   schema: number
@@ -49,6 +59,8 @@ export interface Device {
   applied: boolean
   desiredConfig: AcConfig | null
   reportedConfig: AcConfig | null
+  /** Most recent command initiated against this unit, or null if none yet. */
+  lastCommand: LastCommand | null
 }
 
 /** Success shape of `GET /devices`. */
@@ -253,11 +265,15 @@ export function powerConfig(device: Device, power: Power): ConfigInput {
  * validates the body, proxies it to the unit, and returns the updated
  * {@link Device}. Throws a {@link BridgeError} on validation, network, timeout,
  * or unit-unreachable failures — same error contract as {@link getDevices}.
+ *
+ * `source` tags what initiated the command for the bridge's audit log; it
+ * defaults to `'manual'` (a direct control on the Controllers page).
  */
 export async function setDeviceConfig(
   id: string,
   config: ConfigInput,
   signal?: AbortSignal,
+  source: CommandSource = 'manual',
 ): Promise<Device> {
   const controller = new AbortController()
   const onCallerAbort = () => controller.abort()
@@ -266,12 +282,15 @@ export async function setDeviceConfig(
 
   let res: Response
   try {
-    res = await fetch(`${BRIDGE_URL}/devices/${encodeURIComponent(id)}/config`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify(config),
-      signal: controller.signal,
-    })
+    res = await fetch(
+      `${BRIDGE_URL}/devices/${encodeURIComponent(id)}/config?source=${encodeURIComponent(source)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(config),
+        signal: controller.signal,
+      },
+    )
   } catch (err) {
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
     if (controller.signal.aborted) {

@@ -3,9 +3,11 @@ import {
   carryOverOptionals,
   isControllableMode,
   type AcConfig,
+  type CommandSource,
   type ConfigInput,
   type Device,
   type DeviceStatus,
+  type LastCommand,
   type Mode,
   type Power,
 } from '../api/bridge'
@@ -16,6 +18,24 @@ const STATUS_LABEL: Record<DeviceStatus, string> = {
   online: 'Online',
   stale: 'Stale',
   offline: 'Offline',
+}
+
+// Human labels for what initiated the last command, shown in the info pane.
+const COMMAND_SOURCE_LABEL: Record<CommandSource, string> = {
+  manual: 'Manual',
+  manual_immediate: 'Manual (send now)',
+  scheduled: 'Scheduled',
+}
+
+function lastCommandType(last: LastCommand | null): string {
+  if (!last) return '—'
+  return COMMAND_SOURCE_LABEL[last.source] ?? last.source
+}
+
+function lastCommandTime(last: LastCommand | null): string {
+  if (!last) return '—'
+  const d = new Date(last.at)
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString()
 }
 
 // The subset of modes surfaced as buttons, in display order. `fan` exists in
@@ -156,6 +176,9 @@ export function AcCard2({
   }, [syncPower, syncMode, syncTempF])
 
   const statusLabel = STATUS_LABEL[device.status] ?? device.status
+  // When the unit is off, the only meaningful controls are power + info; mode,
+  // the temp slider, and resend are disabled and the readout shows "—".
+  const off = power === 'off'
 
   /**
    * Build a full config body from the current draft plus any overrides,
@@ -231,7 +254,9 @@ export function AcCard2({
           </header>
 
           <div className="ac2__temp">
-            <span className="ac2__temp-readout">{temp}</span>
+            <span className={`ac2__temp-readout${off ? ' ac2__temp-readout--off' : ''}`}>
+              {off ? '—' : temp}
+            </span>
             <div className="ac2__temp-slider">
               <ThumbSlider
                 value={temp}
@@ -239,7 +264,7 @@ export function AcCard2({
                 max={TEMP_MAX}
                 onChange={setTemp}
                 onCommit={commitTemp}
-                disabled={pending}
+                disabled={pending || off}
               />
             </div>
           </div>
@@ -252,7 +277,7 @@ export function AcCard2({
                 className={`ac2__btn ac2__mode${mode === value ? ' is-active' : ''}`}
                 aria-pressed={mode === value}
                 onClick={() => selectMode(value)}
-                disabled={pending}
+                disabled={pending || off}
               >
                 {label}
               </button>
@@ -275,7 +300,7 @@ export function AcCard2({
               title="Resend current config"
               aria-label="Resend current config"
               onClick={() => void apply(buildConfig({}))}
-              disabled={pending}
+              disabled={pending || off}
             >
               <ResendIcon />
             </button>
@@ -304,6 +329,14 @@ export function AcCard2({
           <div className="ac2__back-scroll">
             <h3 className="ac2__back-title">{device.location || 'Unknown location'}</h3>
             <dl className="ac2__details">
+            <div className="ac2__detail-row">
+              <dt>Last command type</dt>
+              <dd>{lastCommandType(device.lastCommand)}</dd>
+            </div>
+            <div className="ac2__detail-row">
+              <dt>Last command time</dt>
+              <dd>{lastCommandTime(device.lastCommand)}</dd>
+            </div>
             <div className="ac2__detail-row">
               <dt>Location</dt>
               <dd>{device.location || '—'}</dd>

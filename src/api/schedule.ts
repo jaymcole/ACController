@@ -209,7 +209,8 @@ export async function deleteSchedule(id: string, signal?: AbortSignal): Promise<
 export async function sendConfigNow(
   deviceIds: string[],
   config: ConfigInput,
-  push: (id: string, config: ConfigInput) => Promise<unknown> = setDeviceConfig,
+  push: (id: string, config: ConfigInput) => Promise<unknown> = (id, cfg) =>
+    setDeviceConfig(id, cfg, undefined, 'manual_immediate'),
 ): Promise<void> {
   if (deviceIds.length === 0) return
 

@@ -97,6 +97,13 @@
 .ac2__temp-readout::after {
   content: '\00b0';
 }
+/* Off: show a muted "—" with no degree symbol. */
+.ac2__temp-readout--off {
+  color: var(--text);
+}
+.ac2__temp-readout--off::after {
+  content: none;
+}
 .ac2__temp-slider {
   flex: 1;
   min-width: 0;

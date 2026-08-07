@@ -31,6 +31,7 @@ function stepDevice(step: ScheduleStep): Device {
     applied: true,
     desiredConfig: cfg,
     reportedConfig: cfg,
+    lastCommand: null,
   }
 }
 
@@ -63,12 +64,25 @@ export function ScheduleStepCard({
 }) {
   const [sending, setSending] = useState(false)
   const [sendStatus, setSendStatus] = useState<{ ok: boolean; message: string } | null>(null)
+  const [fading, setFading] = useState(false)
 
-  // Clear a success note after a moment so the header doesn't keep a stale badge.
+  // The "Sent" chip shows briefly, then fades out (CSS opacity transition) before
+  // it's unmounted — so it eases away rather than blinking out. Errors don't
+  // auto-clear; they stay until the next send attempt.
   useEffect(() => {
     if (!sendStatus?.ok) return
-    const t = setTimeout(() => setSendStatus(null), 3000)
-    return () => clearTimeout(t)
+    setFading(false)
+    const HOLD_MS = 2200
+    const FADE_MS = 500 // must match the CSS transition on .step-card__sent
+    const startFade = setTimeout(() => setFading(true), HOLD_MS)
+    const clear = setTimeout(() => {
+      setSendStatus(null)
+      setFading(false)
+    }, HOLD_MS + FADE_MS)
+    return () => {
+      clearTimeout(startFade)
+      clearTimeout(clear)
+    }
   }, [sendStatus])
 
   async function handleSend() {
@@ -90,6 +104,14 @@ export function ScheduleStepCard({
       <header className="step-card__head">
         <span className="step-card__index">Step {index}</span>
         <div className="step-card__actions">
+          {sendStatus?.ok && (
+            <span
+              className={`step-card__sent${fading ? ' step-card__sent--fading' : ''}`}
+              role="status"
+            >
+              {sendStatus.message}
+            </span>
+          )}
           <button
             type="button"
             className="step-card__send"
@@ -116,11 +138,8 @@ export function ScheduleStepCard({
         </div>
       </header>
 
-      {sendStatus && (
-        <p
-          className={`step-card__send-status${sendStatus.ok ? '' : ' step-card__send-status--error'}`}
-          role="status"
-        >
+      {sendStatus && !sendStatus.ok && (
+        <p className="step-card__send-status step-card__send-status--error" role="alert">
           {sendStatus.message}
         </p>
       )}
