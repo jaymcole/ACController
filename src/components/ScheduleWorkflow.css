@@ -1,13 +1,11 @@
-/* ScheduleWorkflow — a horizontally scrolling track of cards (config card,
-   then step cards) joined by "+" inserters. Shares status/spinner styles with
-   DeviceList.css. */
+/* ScheduleWorkflow — the schedules page: a header with "New schedule", then all
+   schedules stacked vertically (each an editor track). The horizontal track
+   styles live in ScheduleEditor.css. */
 
-.workflow {
+.schedules {
   /* width:100% + box-sizing pins this to the viewport on mobile (max-width only
-     caps it on desktop, where margin:auto then centers it). Without the explicit
-     width, this flex item of #root sizes to its content's max width and spills
-     past the screen, so the track's overflow-x can't contain to the viewport.
-     min-width:0 lets the track actually shrink and scroll. */
+     caps it on desktop, where margin:auto then centers it). min-width:0 lets the
+     editor tracks actually shrink and scroll instead of spilling the page. */
   width: 100%;
   max-width: 960px;
   min-width: 0;
@@ -17,31 +15,17 @@
   text-align: left;
 }
 
-.workflow__head {
+.schedules__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 8px;
 }
-.workflow__head h2 {
+.schedules__head h2 {
   margin: 0;
 }
-
-.workflow__actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.workflow__saved {
-  font-size: 13px;
-  color: var(--text);
-}
-.workflow__save-error {
-  font-size: 13px;
-  color: #b4232a;
-}
-.workflow__save {
+.schedules__new {
   font: inherit;
   font-size: 15px;
   padding: 6px 14px;
@@ -52,61 +36,40 @@
   border: 1px solid var(--accent-border);
   transition: box-shadow 0.2s, opacity 0.2s;
 }
-.workflow__save:hover:not(:disabled) {
+.schedules__new:hover:not(:disabled) {
   box-shadow: var(--shadow);
 }
-.workflow__save:disabled {
+.schedules__new:disabled {
   cursor: default;
   opacity: 0.6;
 }
 
-.workflow__hint {
+.schedules__hint {
   margin: 0 0 20px;
   font-size: 14px;
   color: var(--text);
 }
 
-/* --- The scrollable track --------------------------------------------------
-   A single flex row that overflows horizontally. Cards don't shrink, so the row
-   grows past the viewport and scrolls. `align-items: stretch` lets same-height
-   cards line up; each card caps its own height internally. */
-.workflow__track {
-  display: flex;
-  align-items: stretch;
-  gap: 4px;
-  padding: 4px 4px 16px;
-  min-width: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-snap-type: x proximity;
+.schedules__status {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: var(--text);
 }
-.workflow__track > * {
-  scroll-snap-align: start;
+.schedules__status--error {
+  color: #b4232a;
 }
 
-/* --- "+" inserter between/after cards --- */
-.workflow__insert {
+/* Stacked schedules, each an editor track, separated by a hairline divider. */
+.schedules__list {
   display: flex;
-  align-items: center;
-  flex: 0 0 auto;
-  padding: 0 4px;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
 }
-.workflow__plus {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  font-size: 22px;
-  line-height: 1;
-  border-radius: 50%;
-  cursor: pointer;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 1px dashed var(--accent-border);
-  transition: box-shadow 0.2s, transform 0.1s;
+.schedules__item {
+  min-width: 0;
+  padding: 8px 0;
 }
-.workflow__plus:hover {
-  box-shadow: var(--shadow);
-  transform: scale(1.08);
+.schedules__item + .schedules__item {
+  border-top: 1px solid var(--border);
 }

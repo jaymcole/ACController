@@ -26,6 +26,12 @@
   letter-spacing: 0.05em;
   color: var(--text);
 }
+.step-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.step-card__send,
 .step-card__delete {
   display: inline-flex;
   align-items: center;
@@ -35,18 +41,41 @@
   padding: 7px;
   border-radius: 8px;
   cursor: pointer;
-  color: #b4232a;
   background: transparent;
   border: 1px solid var(--border);
-  transition: background 0.2s, border-color 0.2s;
+  transition: background 0.2s, border-color 0.2s, opacity 0.2s;
+}
+.step-card__send {
+  color: var(--accent);
+}
+.step-card__send:hover:not(:disabled) {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+}
+.step-card__send:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+.step-card__delete {
+  color: #b4232a;
 }
 .step-card__delete:hover {
   background: rgba(180, 35, 42, 0.08);
   border-color: rgba(180, 35, 42, 0.4);
 }
+.step-card__send svg,
 .step-card__delete svg {
   width: 16px;
   height: 16px;
+}
+
+.step-card__send-status {
+  margin: -6px 0 0;
+  font-size: 12px;
+  color: var(--text);
+}
+.step-card__send-status--error {
+  color: #b4232a;
 }
 
 .step-card__time {

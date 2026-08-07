@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { type ConfigInput, type Device } from '../api/bridge'
 import { configToAcConfig, type ScheduleStep } from '../api/schedule'
 import { AcCard2 } from './AcCard2'
@@ -44,30 +45,85 @@ function stepDevice(step: ScheduleStep): Device {
 export function ScheduleStepCard({
   step,
   index,
+  canSend,
+  onSendNow,
   onChange,
   onDelete,
 }: {
   step: ScheduleStep
   /** 1-based position, shown as the step's label. */
   index: number
+  /** Whether the schedule has any devices to send to (else the button is off). */
+  canSend: boolean
+  /** Push this step's config to the schedule's devices right now. Rejects on failure. */
+  onSendNow: () => Promise<void>
   /** Called with the updated step whenever its time or config changes. */
   onChange: (next: ScheduleStep) => void
   onDelete: () => void
 }) {
+  const [sending, setSending] = useState(false)
+  const [sendStatus, setSendStatus] = useState<{ ok: boolean; message: string } | null>(null)
+
+  // Clear a success note after a moment so the header doesn't keep a stale badge.
+  useEffect(() => {
+    if (!sendStatus?.ok) return
+    const t = setTimeout(() => setSendStatus(null), 3000)
+    return () => clearTimeout(t)
+  }, [sendStatus])
+
+  async function handleSend() {
+    if (sending) return
+    setSending(true)
+    setSendStatus(null)
+    try {
+      await onSendNow()
+      setSendStatus({ ok: true, message: 'Sent' })
+    } catch (err) {
+      setSendStatus({ ok: false, message: err instanceof Error ? err.message : 'Send failed' })
+    } finally {
+      setSending(false)
+    }
+  }
+
   return (
     <article className="step-card">
       <header className="step-card__head">
         <span className="step-card__index">Step {index}</span>
-        <button
-          type="button"
-          className="step-card__delete"
-          title="Delete step"
-          aria-label={`Delete step ${index}`}
-          onClick={onDelete}
-        >
-          <TrashIcon />
-        </button>
+        <div className="step-card__actions">
+          <button
+            type="button"
+            className="step-card__send"
+            title={
+              canSend
+                ? "Send this step's config to the schedule's devices now"
+                : 'Select devices on the schedule card to enable sending'
+            }
+            aria-label={`Send step ${index} now`}
+            disabled={!canSend || sending}
+            onClick={() => void handleSend()}
+          >
+            <SendIcon />
+          </button>
+          <button
+            type="button"
+            className="step-card__delete"
+            title="Delete step"
+            aria-label={`Delete step ${index}`}
+            onClick={onDelete}
+          >
+            <TrashIcon />
+          </button>
+        </div>
       </header>
+
+      {sendStatus && (
+        <p
+          className={`step-card__send-status${sendStatus.ok ? '' : ' step-card__send-status--error'}`}
+          role="status"
+        >
+          {sendStatus.message}
+        </p>
+      )}
 
       <label className="step-card__time">
         <span className="step-card__time-label">Run at</span>
@@ -84,8 +140,19 @@ export function ScheduleStepCard({
         // Schedule write path: instead of pushing to the bridge, capture the
         // config the user built into this step's draft.
         onConfigChange={(config: ConfigInput) => onChange({ ...step, config })}
+        // Synthetic device: no live status, and the info panel would be empty.
+        dummy
       />
     </article>
+  )
+}
+
+function SendIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <line x1="22" y1="2" x2="11" y2="13" />
+      <polygon points="22 2 15 22 11 13 2 9 22 2" />
+    </svg>
   )
 }
 

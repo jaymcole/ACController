@@ -103,6 +103,7 @@ function formatUptime(sec: number | null): string {
 export function AcCard2({
   device,
   onConfigChange,
+  dummy = false,
 }: {
   device: Device
   /**
@@ -112,6 +113,13 @@ export function AcCard2({
    * preview) without touching the component.
    */
   onConfigChange: (config: ConfigInput) => Promise<void> | void
+  /**
+   * A "dummy" card drives a synthetic device (e.g. a schedule step's draft
+   * config), not a real unit. It hides the live status badge and disables the
+   * info flip, whose device details would be meaningless here — the button stays
+   * in place (just inert) so the control row keeps its layout.
+   */
+  dummy?: boolean
 }) {
   // The AC's actual current state — what the controls should mirror. Also the
   // source we preserve fan/vane from when building a push.
@@ -211,13 +219,15 @@ export function AcCard2({
         <div className="ac2__face ac2__front">
           <header className="ac2__head">
             <h3 className="ac2__name">{device.location || 'Unknown location'}</h3>
-            <span
-              className={`ac-status ac-status--${device.status}`}
-              title={`Status: ${statusLabel}`}
-            >
-              <span className="ac-status__dot" aria-hidden="true" />
-              {statusLabel}
-            </span>
+            {!dummy && (
+              <span
+                className={`ac-status ac-status--${device.status}`}
+                title={`Status: ${statusLabel}`}
+              >
+                <span className="ac-status__dot" aria-hidden="true" />
+                {statusLabel}
+              </span>
+            )}
           </header>
 
           <div className="ac2__temp">
@@ -272,9 +282,10 @@ export function AcCard2({
             <button
               type="button"
               className="ac2__btn ac2__icon-btn"
-              title="Device info"
+              title={dummy ? 'Device info unavailable' : 'Device info'}
               aria-label="Device info"
               onClick={() => setFlipped(true)}
+              disabled={dummy}
             >
               <InfoIcon />
             </button>

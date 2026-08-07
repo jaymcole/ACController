@@ -5,13 +5,20 @@
 // carries is exactly the {@link ConfigInput} the bridge already accepts, so a
 // step reuses the same control surface as the live fleet (the AcCard).
 //
-// The schedule backend does not exist yet, so the network methods below are
-// STUBS: they log, simulate latency, and resolve against an in-memory store.
-// The signatures mirror the bridge's `{ ok, error }` conventions so swapping in
-// real `fetch` calls later is a drop-in — callers here are already written to
-// await promises that may reject.
+// These call the bridge's `/schedules` endpoints, mirroring the error contract
+// and fetch conventions of `./bridge` (shared timeout, caller-cancellable
+// AbortController, single JSON parse, uniform `{ ok:false, error }` envelope
+// surfaced as a thrown BridgeError).
 
-import type { AcConfig, ConfigInput } from './bridge'
+import {
+  BRIDGE_URL,
+  BridgeError,
+  REQUEST_TIMEOUT_MS,
+  isBridgeErrorBody,
+  setDeviceConfig,
+  type AcConfig,
+  type ConfigInput,
+} from './bridge'
 
 /** One transmission in a schedule: send `config` to the schedule's devices at `time`. */
 export interface ScheduleStep {
@@ -27,6 +34,9 @@ export interface ScheduleStep {
 export interface Schedule {
   id: string
   name: string
+  /** When false, the bridge persists the schedule but arms no triggers — it
+   *  won't run until re-enabled. Defaults to true for new/legacy schedules. */
+  enabled: boolean
   /** Device ids (from the fleet) this schedule drives. */
   deviceIds: string[]
   /** Ordered steps, left-to-right in the editor. */
@@ -50,9 +60,9 @@ export function makeStep(): ScheduleStep {
   return { id: newId(), time: '', config: { ...DEFAULT_STEP_CONFIG } }
 }
 
-/** Build a blank schedule with a single starter step. */
+/** Build a blank schedule with a single starter step. Enabled by default. */
 export function makeSchedule(): Schedule {
-  return { id: newId(), name: '', deviceIds: [], steps: [makeStep()] }
+  return { id: newId(), name: '', enabled: true, deviceIds: [], steps: [makeStep()] }
 }
 
 /**
@@ -72,49 +82,156 @@ export function configToAcConfig(cfg: ConfigInput): AcConfig {
   }
 }
 
-// --- Stubbed network layer -------------------------------------------------
+// --- Network layer ---------------------------------------------------------
 //
-// Everything below stands in for a schedule API the bridge doesn't expose yet.
-// It keeps a module-level store so a save/reload round-trips within a session,
-// and fakes latency so the UI's pending/optimistic paths are exercised. Replace
-// each body with a real `fetch` to the bridge when the endpoints land; the
-// return contracts should stay the same.
+// Real `fetch` calls to the bridge's `/schedules` routes. These mirror
+// `getDevices`/`setDeviceConfig` in ./bridge: a single AbortController drives
+// both the caller's `signal` and a REQUEST_TIMEOUT_MS timeout, the JSON body is
+// parsed once, and a `{ ok:false, error }` envelope (or a bare non-2xx) is
+// surfaced as a thrown BridgeError carrying the machine-readable `code`.
 
-const SIMULATED_LATENCY_MS = 400
+/**
+ * Shared request helper for the schedule endpoints. Resolves to the parsed JSON
+ * body (or `null` for an empty body). Throws {@link BridgeError} on timeout,
+ * network failure, or any non-2xx — except that `allow404` lets a 404 resolve to
+ * `null` instead of throwing (used by getSchedule).
+ */
+async function scheduleFetch(
+  path: string,
+  init: RequestInit,
+  signal: AbortSignal | undefined,
+  allow404 = false,
+): Promise<unknown> {
+  const controller = new AbortController()
+  const onCallerAbort = () => controller.abort()
+  signal?.addEventListener('abort', onCallerAbort, { once: true })
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
 
-let store: Schedule[] = []
+  let res: Response
+  try {
+    res = await fetch(`${BRIDGE_URL}${path}`, {
+      ...init,
+      headers: { Accept: 'application/json', ...(init.headers ?? {}) },
+      signal: controller.signal,
+    })
+  } catch (err) {
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+    if (controller.signal.aborted) {
+      throw new BridgeError(
+        "The bridge server didn't respond in time. Is it reachable from this device?",
+        'timeout',
+        err,
+      )
+    }
+    throw new BridgeError(
+      "Can't reach the bridge server. Is it running, and does it allow this origin (CORS)?",
+      'network_error',
+      err,
+    )
+  } finally {
+    clearTimeout(timer)
+    signal?.removeEventListener('abort', onCallerAbort)
+  }
 
-function delay<T>(value: T): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), SIMULATED_LATENCY_MS))
+  // Parse the body once; the bridge sends JSON for both success and error.
+  let body: unknown
+  try {
+    body = await res.json()
+  } catch {
+    body = null
+  }
+
+  if (res.status === 404 && allow404) return null
+
+  if (!res.ok) {
+    if (isBridgeErrorBody(body)) {
+      throw new BridgeError(body.error.message, body.error.code, body.error.details)
+    }
+    throw new BridgeError(`Bridge returned ${res.status} ${res.statusText}`, 'http_error')
+  }
+
+  return body
 }
 
-/** STUB — `GET /schedules`. Returns the schedules saved this session. */
-export async function getSchedules(): Promise<Schedule[]> {
-  console.info('[schedule:stub] getSchedules')
-  // Deep-ish clone so callers can't mutate the store by reference.
-  return delay(store.map((s) => ({ ...s, deviceIds: [...s.deviceIds], steps: s.steps.map((st) => ({ ...st })) })))
+/** `GET /schedules` → all saved schedules. */
+export async function getSchedules(signal?: AbortSignal): Promise<Schedule[]> {
+  const body = await scheduleFetch('/schedules', { method: 'GET' }, signal)
+  const data = body as { schedules?: Schedule[] } | null
+  return Array.isArray(data?.schedules) ? data!.schedules : []
 }
 
-/** STUB — `GET /schedules/:id`. */
-export async function getSchedule(id: string): Promise<Schedule | null> {
-  console.info('[schedule:stub] getSchedule', id)
-  const found = store.find((s) => s.id === id) ?? null
-  return delay(found ? { ...found, deviceIds: [...found.deviceIds], steps: found.steps.map((st) => ({ ...st })) } : null)
+/** `GET /schedules/:id` → one schedule, or `null` if it doesn't exist (404). */
+export async function getSchedule(id: string, signal?: AbortSignal): Promise<Schedule | null> {
+  const body = await scheduleFetch(
+    `/schedules/${encodeURIComponent(id)}`,
+    { method: 'GET' },
+    signal,
+    true, // a 404 means "no such schedule" → resolve null, don't throw
+  )
+  if (body === null) return null
+  const data = body as { schedule?: Schedule }
+  return data.schedule ?? null
 }
 
-/** STUB — `PUT /schedules/:id` (upsert). Returns the persisted schedule. */
-export async function saveSchedule(schedule: Schedule): Promise<Schedule> {
-  console.info('[schedule:stub] saveSchedule', schedule)
-  const idx = store.findIndex((s) => s.id === schedule.id)
-  const saved: Schedule = { ...schedule, deviceIds: [...schedule.deviceIds], steps: schedule.steps.map((st) => ({ ...st })) }
-  if (idx >= 0) store[idx] = saved
-  else store.push(saved)
-  return delay({ ...saved })
+/** `PUT /schedules/:id` (upsert) → the persisted schedule. */
+export async function saveSchedule(schedule: Schedule, signal?: AbortSignal): Promise<Schedule> {
+  const body = await scheduleFetch(
+    `/schedules/${encodeURIComponent(schedule.id)}`,
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(schedule),
+    },
+    signal,
+  )
+  const saved = (body as { schedule?: Schedule } | null)?.schedule
+  if (!saved) {
+    throw new BridgeError('Bridge returned an unexpected response.', 'bad_response')
+  }
+  return saved
 }
 
-/** STUB — `DELETE /schedules/:id`. */
-export async function deleteSchedule(id: string): Promise<void> {
-  console.info('[schedule:stub] deleteSchedule', id)
-  store = store.filter((s) => s.id !== id)
-  return delay(undefined)
+/** `DELETE /schedules/:id`. Idempotent server-side (deleting a missing id is ok). */
+export async function deleteSchedule(id: string, signal?: AbortSignal): Promise<void> {
+  await scheduleFetch(`/schedules/${encodeURIComponent(id)}`, { method: 'DELETE' }, signal)
+}
+
+/**
+ * Immediately push `config` to every device id — the "send now" path for a
+ * schedule step. Takes the same route as manual control ({@link setDeviceConfig},
+ * i.e. POST /devices/:id/config) and isolates per-device failures so one offline
+ * unit doesn't block the rest. Resolves when all succeed (or there are no
+ * devices); throws a {@link BridgeError} summarizing the failures otherwise.
+ *
+ * `push` is injectable so the fan-out/summary logic is unit-testable without the
+ * network.
+ */
+export async function sendConfigNow(
+  deviceIds: string[],
+  config: ConfigInput,
+  push: (id: string, config: ConfigInput) => Promise<unknown> = setDeviceConfig,
+): Promise<void> {
+  if (deviceIds.length === 0) return
+
+  const results = await Promise.allSettled(deviceIds.map((id) => push(id, config)))
+  const failures = results
+    .map((r, i) => ({ r, id: deviceIds[i] }))
+    .filter((x): x is { r: PromiseRejectedResult; id: string } => x.r.status === 'rejected')
+  if (failures.length === 0) return
+
+  const reasonOf = (r: PromiseRejectedResult) =>
+    r.reason instanceof Error ? r.reason.message : String(r.reason)
+  const first = failures[0]
+  if (failures.length === deviceIds.length) {
+    throw new BridgeError(
+      deviceIds.length === 1
+        ? reasonOf(first.r)
+        : `All ${deviceIds.length} devices failed (e.g. ${first.id}: ${reasonOf(first.r)})`,
+      'send_failed',
+    )
+  }
+  throw new BridgeError(
+    `${failures.length} of ${deviceIds.length} devices failed (e.g. ${first.id}: ${reasonOf(first.r)})`,
+    'send_partial_failure',
+  )
 }

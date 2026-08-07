@@ -2,37 +2,66 @@ import { type Device } from '../api/bridge'
 import './ScheduleConfigCard.css'
 
 /**
- * The leading card of the workflow: the schedule's identity (name) and the set
- * of devices it drives. Sized and styled to sit inline with the step cards in
- * the horizontal scroller, but it carries no AC state of its own.
+ * The leading card of a schedule: its identity (name), enablement, the devices
+ * it drives, and the per-schedule actions (Save / Delete). Sized and styled to
+ * sit inline with the step cards in the horizontal scroller, but it carries no
+ * AC state of its own.
  */
 export function ScheduleConfigCard({
   name,
+  enabled,
   deviceIds,
   devices,
   devicesLoading,
   devicesError,
+  saving,
+  savedAt,
+  saveError,
+  dirty,
+  deleting,
   onNameChange,
+  onToggleEnabled,
   onToggleDevice,
+  onSave,
+  onDelete,
 }: {
   name: string
+  enabled: boolean
   deviceIds: string[]
   /** The discoverable fleet to pick from. */
   devices: Device[]
   devicesLoading: boolean
   devicesError: string | null
+  saving: boolean
+  savedAt: string | null
+  saveError: string | null
+  /** Unsaved edits pending — drives the Save label + a reminder for the toggle. */
+  dirty: boolean
+  deleting: boolean
   onNameChange: (name: string) => void
+  onToggleEnabled: (enabled: boolean) => void
   onToggleDevice: (id: string, selected: boolean) => void
+  onSave: () => void
+  onDelete: () => void
 }) {
   const selected = new Set(deviceIds)
 
   return (
-    <article className="config-card">
+    <article className={`config-card${enabled ? '' : ' config-card--disabled'}`}>
       <header className="config-card__head">
         <h3 className="config-card__title">Schedule</h3>
-        <span className="config-card__badge">
-          {deviceIds.length} device{deviceIds.length === 1 ? '' : 's'}
-        </span>
+        <label className="switch" title={enabled ? 'Enabled' : 'Disabled'}>
+          <input
+            type="checkbox"
+            className="switch__input"
+            checked={enabled}
+            onChange={(e) => onToggleEnabled(e.target.checked)}
+          />
+          <span className="switch__track" aria-hidden="true">
+            <span className="switch__thumb" />
+          </span>
+          <span className="switch__text">{enabled ? 'Enabled' : 'Disabled'}</span>
+        </label>
       </header>
 
       <label className="config-card__field">
@@ -47,7 +76,12 @@ export function ScheduleConfigCard({
       </label>
 
       <div className="config-card__field config-card__devices-field">
-        <span className="config-card__label">Applies to</span>
+        <span className="config-card__label">
+          Applies to
+          <span className="config-card__count">
+            {deviceIds.length} device{deviceIds.length === 1 ? '' : 's'}
+          </span>
+        </span>
 
         {devicesLoading && devices.length === 0 && !devicesError && (
           <p className="config-card__hint">Discovering controllers…</p>
@@ -85,6 +119,38 @@ export function ScheduleConfigCard({
           })}
         </ul>
       </div>
+
+      <footer className="config-card__actions">
+        <div className="config-card__action-row">
+          <button
+            type="button"
+            className="config-card__save"
+            onClick={onSave}
+            disabled={saving || deleting}
+          >
+            {saving ? 'Saving…' : 'Save schedule'}
+          </button>
+          <button
+            type="button"
+            className="config-card__delete"
+            onClick={onDelete}
+            disabled={saving || deleting}
+          >
+            {deleting ? 'Deleting…' : 'Delete'}
+          </button>
+        </div>
+        <div className="config-card__status" aria-live="polite">
+          {saveError ? (
+            <span className="config-card__status-error" role="alert">
+              {saveError}
+            </span>
+          ) : dirty ? (
+            <span className="config-card__status-note">Unsaved changes</span>
+          ) : savedAt ? (
+            <span className="config-card__status-note">Saved {savedAt}</span>
+          ) : null}
+        </div>
+      </footer>
     </article>
   )
 }

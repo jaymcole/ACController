@@ -83,7 +83,7 @@ export class BridgeError extends Error {
   }
 }
 
-function isBridgeErrorBody(value: unknown): value is BridgeErrorBody {
+export function isBridgeErrorBody(value: unknown): value is BridgeErrorBody {
   if (typeof value !== 'object' || value === null) return false
   const v = value as Record<string, unknown>
   return (
@@ -102,8 +102,9 @@ function isBridgeErrorBody(value: unknown): value is BridgeErrorBody {
  * carrying the uniform `{ ok: false, error }` body.
  */
 /** Abort a request that neither resolves nor rejects (e.g. a name that never
- *  resolves via mDNS on some devices), so the UI can't hang forever. */
-const REQUEST_TIMEOUT_MS = 8_000
+ *  resolves via mDNS on some devices), so the UI can't hang forever. Exported so
+ *  sibling clients (e.g. the schedule API) share the same timeout budget. */
+export const REQUEST_TIMEOUT_MS = 8_000
 
 export async function getDevices(signal?: AbortSignal): Promise<DevicesResponse> {
   // Fail the fetch if either the caller cancels (unmount/refresh) or we hit the

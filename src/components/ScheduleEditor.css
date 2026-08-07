@@ -1,0 +1,47 @@
+/* ScheduleEditor — one schedule as a horizontally scrolling track of cards
+   (config card, then step cards) joined by "+" inserters. Multiple editors
+   stack vertically on the page. Shares status/spinner styles with DeviceList.css. */
+
+/* A single flex row that overflows horizontally. Cards don't shrink, so the row
+   grows past the viewport and scrolls. `align-items: stretch` lets same-height
+   cards line up; each card caps its own height internally. */
+.editor__track {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  padding: 4px 4px 16px;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+}
+.editor__track > * {
+  scroll-snap-align: start;
+}
+
+/* --- "+" inserter between/after cards --- */
+.editor__insert {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 0 4px;
+}
+.editor__plus {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  font-size: 22px;
+  line-height: 1;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 1px dashed var(--accent-border);
+  transition: box-shadow 0.2s, transform 0.1s;
+}
+.editor__plus:hover {
+  box-shadow: var(--shadow);
+  transform: scale(1.08);
+}

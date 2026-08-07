@@ -1,5 +1,6 @@
-/* ScheduleConfigCard — the leading card of the workflow: schedule name and the
-   set of devices it targets. Matches the step cards' footprint. */
+/* ScheduleConfigCard — the leading card of a schedule: name, enablement, the
+   set of devices it targets, and the Save/Delete actions. Matches the step
+   cards' footprint. */
 
 .config-card {
   flex: 0 0 288px;
@@ -12,10 +13,19 @@
   border-radius: 14px;
   background: var(--bg);
 }
+/* Disabled: mute the identity/device body so it reads as inert, but keep the
+   switch and actions fully legible so it can be re-enabled or edited. */
+.config-card--disabled {
+  border-color: var(--border);
+  border-style: dashed;
+}
+.config-card--disabled .config-card__field {
+  opacity: 0.55;
+}
 
 .config-card__head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
@@ -24,15 +34,57 @@
   font-size: 18px;
   color: var(--text-h);
 }
-.config-card__badge {
+
+/* --- Enable/disable switch (native checkbox, styled track+thumb) --- */
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.switch__input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.switch__track {
+  position: relative;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  transition: background 0.15s, border-color 0.15s;
+}
+.switch__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s;
+}
+.switch__input:checked + .switch__track {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.switch__input:checked + .switch__track .switch__thumb {
+  transform: translateX(16px);
+}
+.switch__input:focus-visible + .switch__track {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.switch__text {
   font-size: 12px;
   font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 999px;
-  color: var(--accent);
-  background: var(--accent-bg);
-  border: 1px solid var(--accent-border);
-  white-space: nowrap;
+  color: var(--text);
 }
 
 .config-card__field {
@@ -41,11 +93,19 @@
   gap: 6px;
 }
 .config-card__label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text);
+}
+.config-card__count {
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--accent);
 }
 .config-card__name {
   font: inherit;
@@ -72,7 +132,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-height: 260px;
+  max-height: 200px;
   overflow-y: auto;
 }
 .config-card__device {
@@ -110,5 +170,62 @@
   color: var(--text);
 }
 .config-card__hint--error {
+  color: #b4232a;
+}
+
+/* --- Per-schedule actions, pinned to the bottom so cards align in the row --- */
+.config-card__actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.config-card__action-row {
+  display: flex;
+  gap: 8px;
+}
+.config-card__save {
+  flex: 1;
+  font: inherit;
+  font-size: 15px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  transition: box-shadow 0.2s, opacity 0.2s;
+}
+.config-card__save:hover:not(:disabled) {
+  box-shadow: var(--shadow);
+}
+.config-card__delete {
+  font: inherit;
+  font-size: 15px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #b4232a;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+.config-card__delete:hover:not(:disabled) {
+  background: rgba(180, 35, 42, 0.1);
+  border-color: rgba(180, 35, 42, 0.35);
+}
+.config-card__save:disabled,
+.config-card__delete:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.config-card__status {
+  min-height: 18px;
+  font-size: 12px;
+}
+.config-card__status-note {
+  color: var(--text);
+}
+.config-card__status-error {
   color: #b4232a;
 }
