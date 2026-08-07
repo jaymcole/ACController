@@ -1,0 +1,114 @@
+/* ScheduleConfigCard — the leading card of the workflow: schedule name and the
+   set of devices it targets. Matches the step cards' footprint. */
+
+.config-card {
+  flex: 0 0 288px;
+  width: 288px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--accent-border);
+  border-radius: 14px;
+  background: var(--bg);
+}
+
+.config-card__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.config-card__title {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text-h);
+}
+.config-card__badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  white-space: nowrap;
+}
+
+.config-card__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.config-card__label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+.config-card__name {
+  font: inherit;
+  font-size: 15px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--text-h);
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+.config-card__name:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Device list: scrolls within the card so a large fleet doesn't stretch it. */
+.config-card__devices-field {
+  min-height: 0;
+}
+.config-card__devices {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.config-card__device {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+.config-card__device:hover {
+  background: var(--accent-bg);
+}
+.config-card__device input {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.config-card__device-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  color: var(--text-h);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.config-card__hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text);
+}
+.config-card__hint--error {
+  color: #b4232a;
+}
