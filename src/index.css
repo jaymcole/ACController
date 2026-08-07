@@ -66,6 +66,17 @@ body {
   margin: 0;
 }
 
+/* Never let the page itself scroll sideways. The only intentionally-wide thing
+   is the schedule track, which scrolls within its own overflow-x container.
+   Clipping horizontal overflow at the page level keeps the viewport fixed and,
+   importantly on iOS Safari, forces a horizontal drag into the inner track
+   scroller instead of panning the whole page. overflow-y stays scrollable. */
+html,
+body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 h1,
 h2 {
   font-family: var(--heading);
