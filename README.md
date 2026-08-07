@@ -1,6 +1,31 @@
 # ACController
 
-A React + TypeScript web app, built with [Vite](https://vite.dev/).
+React + TypeScript web UI ([Vite](https://vite.dev/)) for controlling a home
+fleet of Mitsubishi minisplit AC units. This is the **presentation tier only** —
+it talks solely to the DesktopBridge over HTTP and never to the AC nodes directly
+and never handles the auth token.
+
+## System architecture (associated repositories)
+
+Three components, normally checked out as **siblings** under one parent folder:
+
+| Component | Repo | Role |
+| --- | --- | --- |
+| **ACController** (this) | `ACController/` | The web UI. Polls `GET /devices`; sends `POST /devices/:id/config` etc. Base URL is `/bridge` (reverse-proxied) or `VITE_BRIDGE_URL`. |
+| **DesktopBridge** | `DesktopBridge/` (sibling) | Always-on Node/Express hub. Discovers nodes, holds desired state, proxies commands, serves this UI. Owns the shared token (server-side only). |
+| **Firmware** | `ArduinoScripts/scripts/ac_controller/` (sibling) | ESP32-S3 node on each AC. Transmits IR; reports the physical remote's commands. See that folder's `README.md`. |
+
+```
+  ACController ──HTTP(JSON, no token)──▶ DesktopBridge ──HTTP(JSON + token)──▶ ESP32 nodes ──IR──▶ ACs
+```
+
+**Key client files:** [`src/api/bridge.ts`](src/api/bridge.ts) (all bridge calls +
+`Device`/`AcConfig` types — the source of truth for the bridge contract),
+[`src/hooks/useDevices.ts`](src/hooks/useDevices.ts) (2s polling), and
+[`src/components/AcCard2.tsx`](src/components/AcCard2.tsx) (per-device card; the
+info face shows Signal/RSSI + Uptime). The UI works in °F and converts to the
+bridge's °C at the API boundary. `dist/` is served directly (e.g. by HouseGraph),
+so **rebuild after changes** for deployed viewers to see them.
 
 ## Prerequisites
 
