@@ -1,0 +1,76 @@
+/* ScheduleStepCard — a fixed-width wrapper around an AcCard, adding the step's
+   execution time and a delete control. Sits inline in the workflow track. */
+
+.step-card {
+  flex: 0 0 288px;
+  width: 288px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--social-bg);
+}
+
+.step-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.step-card__index {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text);
+}
+.step-card__delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 7px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #b4232a;
+  background: transparent;
+  border: 1px solid var(--border);
+  transition: background 0.2s, border-color 0.2s;
+}
+.step-card__delete:hover {
+  background: rgba(180, 35, 42, 0.08);
+  border-color: rgba(180, 35, 42, 0.4);
+}
+.step-card__delete svg {
+  width: 16px;
+  height: 16px;
+}
+
+.step-card__time {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.step-card__time-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+.step-card__time-input {
+  font: inherit;
+  font-size: 15px;
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: var(--text-h);
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+.step-card__time-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
