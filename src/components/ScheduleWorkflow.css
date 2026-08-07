@@ -3,9 +3,17 @@
    DeviceList.css. */
 
 .workflow {
+  /* width:100% + box-sizing pins this to the viewport on mobile (max-width only
+     caps it on desktop, where margin:auto then centers it). Without the explicit
+     width, this flex item of #root sizes to its content's max width and spills
+     past the screen, so the track's overflow-x can't contain to the viewport.
+     min-width:0 lets the track actually shrink and scroll. */
+  width: 100%;
   max-width: 960px;
+  min-width: 0;
   margin: 0 auto;
   padding: 24px 20px 48px;
+  box-sizing: border-box;
   text-align: left;
 }
 
@@ -67,6 +75,7 @@
   align-items: stretch;
   gap: 4px;
   padding: 4px 4px 16px;
+  min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x proximity;

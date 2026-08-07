@@ -1,7 +1,13 @@
 .device-list {
+  /* Same viewport-pinning as .workflow: as a flex item of #root, width:100% +
+     box-sizing keeps it within the screen on mobile while max-width + margin
+     center it on desktop. */
+  width: 100%;
   max-width: 960px;
+  min-width: 0;
   margin: 0 auto;
   padding: 24px 20px 48px;
+  box-sizing: border-box;
 }
 
 .device-list__head {
