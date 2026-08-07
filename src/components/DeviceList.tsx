@@ -1,3 +1,4 @@
+import { setDeviceConfig, type ConfigInput } from '../api/bridge'
 import { useDevices } from '../hooks/useDevices'
 import { AcCard2 } from './AcCard2'
 import './DeviceList.css'
@@ -47,7 +48,16 @@ export function DeviceList() {
           {error && <p className="device-list__banner" role="alert">{error}</p>}
           <div className="device-list__grid">
             {devices.map((device) => (
-              <AcCard2 key={device.id} device={device} onChanged={refresh} />
+              <AcCard2
+                key={device.id}
+                device={device}
+                // Live write path: push the config to the bridge, then refresh
+                // the fleet so the card reseeds from the unit's new state.
+                onConfigChange={async (config: ConfigInput) => {
+                  await setDeviceConfig(device.id, config)
+                  refresh()
+                }}
+              />
             ))}
           </div>
         </>

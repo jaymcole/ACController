@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import {
   carryOverOptionals,
   isControllableMode,
-  setDeviceConfig,
   type AcConfig,
   type ConfigInput,
   type Device,
@@ -90,16 +89,29 @@ function formatUptime(sec: number | null): string {
  * A single AC controller rendered as a flippable control card.
  *
  * The card holds a local *draft* of the desired config (power / mode / temp),
- * seeded from the device on mount. Each control edits the draft and pushes it
- * to the bridge; the info button flips the card to reveal its address details.
+ * seeded from the device on mount. Each control edits the draft and hands the
+ * resulting config to `onConfigChange`; the info button flips the card to reveal
+ * its address details.
+ *
+ * The card owns no network knowledge — it never talks to the bridge directly.
+ * The write path is entirely the caller's: `onConfigChange` decides what a config
+ * change *means*. In the live fleet that's a push to the bridge; a schedule
+ * editor could instead capture the config into a draft state to preview it. The
+ * card only orchestrates the surrounding UI (pending/error) around whatever the
+ * callback does, awaiting it and surfacing any thrown error inline.
  */
 export function AcCard2({
   device,
-  onChanged,
+  onConfigChange,
 }: {
   device: Device
-  /** Called after a successful config change so the list can refresh. */
-  onChanged?: () => void
+  /**
+   * Invoked with the full config the user built whenever a control changes.
+   * May be async; if it rejects, the card shows the error inline. This is the
+   * card's only write path — swap it to repurpose the card (live control vs.
+   * preview) without touching the component.
+   */
+  onConfigChange: (config: ConfigInput) => Promise<void> | void
 }) {
   // The AC's actual current state — what the controls should mirror. Also the
   // source we preserve fan/vane from when building a push.
@@ -161,14 +173,13 @@ export function AcCard2({
     return cfg
   }
 
-  /** Push a config to the bridge, surfacing any failure inline. */
+  /** Hand a config to the caller's write path, surfacing any failure inline. */
   async function apply(config: ConfigInput) {
     if (pending) return
     setPending(true)
     setError(null)
     try {
-      await setDeviceConfig(device.id, config)
-      onChanged?.()
+      await onConfigChange(config)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update the unit.')
     } finally {
