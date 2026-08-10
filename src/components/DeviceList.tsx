@@ -4,6 +4,43 @@ import { useDevices } from '../hooks/useDevices'
 import { AcCard2 } from './AcCard2'
 import './DeviceList.css'
 
+/**
+ * Copy text to the clipboard across browsers and deployment contexts. The
+ * async Clipboard API requires a secure context (HTTPS or localhost), but
+ * this app is served plain-HTTP on the LAN — where it's simply absent on
+ * Windows Chrome/Edge and blocked on iOS Safari. The legacy execCommand path
+ * has no such restriction, so it's the one that actually works here; a
+ * prompt() is the last resort so there's always a way to grab the text.
+ */
+async function copyToClipboard(text: string): Promise<void> {
+  if (window.isSecureContext && navigator.clipboard) {
+    try {
+      await navigator.clipboard.writeText(text)
+      return
+    } catch {
+      // Fall through to the legacy path below.
+    }
+  }
+
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.readOnly = true
+  textarea.style.position = 'fixed'
+  textarea.style.opacity = '0'
+  document.body.appendChild(textarea)
+  textarea.focus()
+  textarea.setSelectionRange(0, text.length)
+  let ok = false
+  try {
+    ok = document.execCommand('copy')
+  } catch {
+    ok = false
+  }
+  document.body.removeChild(textarea)
+
+  if (!ok) window.prompt('Copy the device details below:', text)
+}
+
 /** Fetches and displays the fleet of discovered AC controllers. */
 export function DeviceList() {
   const { devices, count, loading, error, refresh } = useDevices()
@@ -12,13 +49,9 @@ export function DeviceList() {
   // Dumps the exact bridge Device objects (id, ip, location, etc.) as JSON so
   // they can be pasted elsewhere — e.g. for spotting duplicate/stale entries.
   async function copyDetails() {
-    try {
-      await navigator.clipboard.writeText(JSON.stringify(devices, null, 2))
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch {
-      // Clipboard access can be denied (e.g. insecure context); nothing more to do.
-    }
+    await copyToClipboard(JSON.stringify(devices, null, 2))
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   return (
