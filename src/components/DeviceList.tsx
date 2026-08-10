@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { setDeviceConfig, type ConfigInput } from '../api/bridge'
 import { useDevices } from '../hooks/useDevices'
 import { AcCard2 } from './AcCard2'
@@ -6,14 +7,37 @@ import './DeviceList.css'
 /** Fetches and displays the fleet of discovered AC controllers. */
 export function DeviceList() {
   const { devices, count, loading, error, refresh } = useDevices()
+  const [copied, setCopied] = useState(false)
+
+  // Dumps the exact bridge Device objects (id, ip, location, etc.) as JSON so
+  // they can be pasted elsewhere — e.g. for spotting duplicate/stale entries.
+  async function copyDetails() {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(devices, null, 2))
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Clipboard access can be denied (e.g. insecure context); nothing more to do.
+    }
+  }
 
   return (
     <section className="device-list">
       <header className="device-list__head">
         <h2>AC Controllers</h2>
-        <button type="button" className="device-list__refresh" onClick={refresh}>
-          Refresh
-        </button>
+        <div className="device-list__actions">
+          <button
+            type="button"
+            className="device-list__refresh"
+            onClick={() => void copyDetails()}
+            disabled={devices.length === 0}
+          >
+            {copied ? 'Copied!' : 'Copy details'}
+          </button>
+          <button type="button" className="device-list__refresh" onClick={refresh}>
+            Refresh
+          </button>
+        </div>
       </header>
 
       {/* Loading: only on the very first load, before we have any data. */}

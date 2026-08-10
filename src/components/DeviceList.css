@@ -23,6 +23,13 @@
   color: var(--text-h);
 }
 
+.device-list__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .device-list__refresh {
   font: inherit;
   font-size: 15px;
@@ -36,6 +43,11 @@
 }
 .device-list__refresh:hover {
   box-shadow: var(--shadow);
+}
+.device-list__refresh:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  box-shadow: none;
 }
 
 /* --- Grid of cards --- */
