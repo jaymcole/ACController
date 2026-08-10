@@ -342,6 +342,10 @@ export function AcCard2({
               <dd>{device.location || '—'}</dd>
             </div>
             <div className="ac2__detail-row">
+              <dt>Device ID</dt>
+              <dd>{device.id}</dd>
+            </div>
+            <div className="ac2__detail-row">
               <dt>Firmware</dt>
               <dd>{device.firmware || '—'}</dd>
             </div>
