@@ -222,13 +222,13 @@
   justify-content: center;
   border: none;
   border-radius: 11px;
-  background: rgba(110, 110, 120, 0.92);
+  background: rgba(17, 17, 20, 0.6);
   color: #fff;
   cursor: pointer;
   transition: background 0.2s;
 }
 .ac2__off-overlay:hover:not(:disabled) {
-  background: rgba(110, 110, 120, 0.97);
+  background: rgba(17, 17, 20, 0.7);
 }
 .ac2__off-overlay:disabled {
   cursor: default;
