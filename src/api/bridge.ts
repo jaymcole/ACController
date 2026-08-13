@@ -221,8 +221,11 @@ const DEFAULT_ON_TEMP = 16
 // filtered against these or the bridge will reject the push with a 400.
 const CONTROLLABLE_MODES: readonly Mode[] = ['auto', 'cool', 'heat', 'dry']
 const VALID_FAN = new Set(['auto', '1', '2', '3', '4'])
-const VALID_VANE_VERT = new Set(['auto', '1', '2', '3', '4', '5', 'swing'])
-const VALID_VANE_HORIZ = new Set(['left', 'mleft', 'middle', 'mright', 'right', 'wide', 'auto'])
+// Exported so callers (e.g. the vane controls on AcCard2) can validate/enumerate
+// the same vocabulary the bridge's schema-v1 validator accepts, instead of
+// duplicating it.
+export const VALID_VANE_VERT = new Set(['auto', '1', '2', '3', '4', '5', 'swing'])
+export const VALID_VANE_HORIZ = new Set(['left', 'mleft', 'middle', 'mright', 'right', 'wide', 'auto'])
 
 /** True if `m` is a mode the bridge accepts on a push (excludes fan-only). */
 export function isControllableMode(m: Mode | null | undefined): m is Mode {

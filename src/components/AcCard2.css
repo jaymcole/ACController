@@ -144,6 +144,40 @@
   background: var(--accent-bg);
 }
 
+/* --- Fin position: vertical + horizontal, each a labeled select --- */
+.ac2__vanes {
+  display: flex;
+  gap: 8px;
+}
+.ac2__vane-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.ac2__vane-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+.ac2__select {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  cursor: pointer;
+}
+.ac2__select:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
 /* --- Bottom row: power (grows) + resend + info --- */
 .ac2__actions {
   display: flex;

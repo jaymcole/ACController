@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import {
   carryOverOptionals,
   isControllableMode,
+  VALID_VANE_HORIZ,
+  VALID_VANE_VERT,
   type AcConfig,
   type CommandSource,
   type ConfigInput,
@@ -10,6 +12,7 @@ import {
   type LastCommand,
   type Mode,
   type Power,
+  type VanePosition,
 } from '../api/bridge'
 import { ThumbSlider } from './ThumbSlider'
 import './AcCard2.css'
@@ -45,6 +48,35 @@ const MODES: { value: Mode; label: string }[] = [
   { value: 'heat', label: 'Heat' },
   { value: 'auto', label: 'Auto' },
   { value: 'dry', label: 'Dry' },
+]
+
+const DEFAULT_VANE = 'auto'
+
+// The vertical vane (up/down flap) can hold a fixed position instead of
+// sweeping, which matters on units whose stepper motor clicks audibly while
+// swinging. Wire values are still the firmware's "1".."5" (per
+// IRremoteESP8266's ir_Mitsubishi.h: 1=Highest .. 5=Lowest); the labels just
+// give that scale a human-readable name.
+const VANE_VERT_OPTIONS: { value: VanePosition; label: string }[] = [
+  { value: 'auto', label: 'Auto' },
+  { value: '1', label: 'Highest' },
+  { value: '2', label: 'High' },
+  { value: '3', label: 'Middle' },
+  { value: '4', label: 'Low' },
+  { value: '5', label: 'Lowest' },
+  { value: 'swing', label: 'Swing' },
+]
+
+// The horizontal wide vane (left/right louvers) has no firmware "swing"
+// option — only fixed positions plus auto.
+const VANE_HORIZ_OPTIONS: { value: VanePosition; label: string }[] = [
+  { value: 'auto', label: 'Auto' },
+  { value: 'left', label: 'Left' },
+  { value: 'mleft', label: 'Mid-left' },
+  { value: 'middle', label: 'Middle' },
+  { value: 'mright', label: 'Mid-right' },
+  { value: 'right', label: 'Right' },
+  { value: 'wide', label: 'Wide' },
 ]
 
 // The slider works in °F for the UI, but the bridge/firmware speaks Celsius, so
@@ -151,6 +183,12 @@ export function AcCard2({
   const [temp, setTemp] = useState<number>(
     clamp(base?.temp != null ? cToF(base.temp) : DEFAULT_TEMP, TEMP_MIN, TEMP_MAX),
   )
+  const [vaneVert, setVaneVert] = useState<VanePosition>(
+    base?.vaneVert != null && VALID_VANE_VERT.has(base.vaneVert) ? base.vaneVert : DEFAULT_VANE,
+  )
+  const [vaneHoriz, setVaneHoriz] = useState<VanePosition>(
+    base?.vaneHoriz != null && VALID_VANE_HORIZ.has(base.vaneHoriz) ? base.vaneHoriz : DEFAULT_VANE,
+  )
   const [flipped, setFlipped] = useState(false)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -165,6 +203,10 @@ export function AcCard2({
   const syncPower = base?.power ?? 'off'
   const syncMode = base?.mode ?? 'cool'
   const syncTempF = clamp(base?.temp != null ? cToF(base.temp) : DEFAULT_TEMP, TEMP_MIN, TEMP_MAX)
+  const syncVaneVert =
+    base?.vaneVert != null && VALID_VANE_VERT.has(base.vaneVert) ? base.vaneVert : DEFAULT_VANE
+  const syncVaneHoriz =
+    base?.vaneHoriz != null && VALID_VANE_HORIZ.has(base.vaneHoriz) ? base.vaneHoriz : DEFAULT_VANE
   useEffect(() => {
     if (pending) return
     setPower(syncPower)
@@ -172,8 +214,10 @@ export function AcCard2({
     // leave the current mode selection as-is rather than forcing an invalid one.
     if (isControllableMode(syncMode)) setMode(syncMode)
     setTemp(syncTempF)
+    setVaneVert(syncVaneVert)
+    setVaneHoriz(syncVaneHoriz)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [syncPower, syncMode, syncTempF])
+  }, [syncPower, syncMode, syncTempF, syncVaneVert, syncVaneHoriz])
 
   const statusLabel = STATUS_LABEL[device.status] ?? device.status
   // When the unit is off, the only meaningful controls are power + info; mode,
@@ -184,7 +228,9 @@ export function AcCard2({
    * Build a full config body from the current draft plus any overrides,
    * preserving fan/vane settings the bridge already knows about.
    */
-  function buildConfig(overrides: Partial<Pick<ConfigInput, 'power' | 'mode' | 'temp'>>): ConfigInput {
+  function buildConfig(
+    overrides: Partial<Pick<ConfigInput, 'power' | 'mode' | 'temp' | 'vaneVert' | 'vaneHoriz'>>,
+  ): ConfigInput {
     const nextPower = overrides.power ?? power
     if (nextPower === 'off') return { schema: 1, power: 'off' }
 
@@ -199,8 +245,11 @@ export function AcCard2({
       // Overrides and draft state are °F; the bridge expects °C.
       temp: fToC(overrides.temp ?? temp),
     }
-    // Preserve only bridge-valid fan/vane values from the actual state.
+    // Seed fan (not user-editable here) and vane from the actual state, then
+    // let the vane draft — which the user edits directly — win over it.
     carryOverOptionals(cfg, base)
+    cfg.vaneVert = overrides.vaneVert ?? vaneVert
+    cfg.vaneHoriz = overrides.vaneHoriz ?? vaneHoriz
     return cfg
   }
 
@@ -233,6 +282,16 @@ export function AcCard2({
   function commitTemp(next: number) {
     setTemp(next)
     if (power === 'on') void apply(buildConfig({ temp: next }))
+  }
+
+  function selectVaneVert(next: VanePosition) {
+    setVaneVert(next)
+    if (power === 'on') void apply(buildConfig({ vaneVert: next }))
+  }
+
+  function selectVaneHoriz(next: VanePosition) {
+    setVaneHoriz(next)
+    if (power === 'on') void apply(buildConfig({ vaneHoriz: next }))
   }
 
   return (
@@ -282,6 +341,41 @@ export function AcCard2({
                 {label}
               </button>
             ))}
+          </div>
+
+          <div className="ac2__vanes">
+            <label className="ac2__vane-field">
+              <span className="ac2__vane-label">Vertical</span>
+              <select
+                className="ac2__select"
+                aria-label="Vertical fin position"
+                value={vaneVert}
+                onChange={(e) => selectVaneVert(e.target.value)}
+                disabled={pending || off}
+              >
+                {VANE_VERT_OPTIONS.map(({ value, label }) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="ac2__vane-field">
+              <span className="ac2__vane-label">Horizontal</span>
+              <select
+                className="ac2__select"
+                aria-label="Horizontal fin position"
+                value={vaneHoriz}
+                onChange={(e) => selectVaneHoriz(e.target.value)}
+                disabled={pending || off}
+              >
+                {VANE_HORIZ_OPTIONS.map(({ value, label }) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
 
           <div className="ac2__actions">
