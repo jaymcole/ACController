@@ -415,6 +415,18 @@ export function AcCard2({
               {error}
             </p>
           )}
+
+          {off && (
+            <button
+              type="button"
+              className="ac2__off-overlay"
+              onClick={togglePower}
+              disabled={pending}
+              aria-label={`Turn on ${device.location || 'unit'}`}
+            >
+              <PowerIcon />
+            </button>
+          )}
         </div>
 
         {/* --- Back: address details. Title + table scroll; Back button is
@@ -487,6 +499,15 @@ function ResendIcon() {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
       <path d="M21 12a9 9 0 1 1-2.64-6.36" />
       <polyline points="21 3 21 9 15 9" />
+    </svg>
+  )
+}
+
+function PowerIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <line x1="12" y1="2" x2="12" y2="12" strokeLinecap="round" />
+      <path d="M18.36 6.64a9 9 0 1 1-12.73 0" strokeLinecap="round" />
     </svg>
   )
 }

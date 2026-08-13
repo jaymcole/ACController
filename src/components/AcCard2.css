@@ -22,6 +22,7 @@
 }
 
 .ac2__face {
+  position: relative;
   grid-area: 1 / 1;
   display: flex;
   flex-direction: column;
@@ -207,6 +208,34 @@
   margin: 0;
   font-size: 13px;
   color: #b4232a;
+}
+
+/* --- Off-state overlay: dims the whole front face and surfaces a single
+   power button, so an off unit reads as off at a glance instead of via
+   scattered disabled controls. --- */
+.ac2__off-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 11px;
+  background: rgba(110, 110, 120, 0.92);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.ac2__off-overlay:hover:not(:disabled) {
+  background: rgba(110, 110, 120, 0.97);
+}
+.ac2__off-overlay:disabled {
+  cursor: default;
+}
+.ac2__off-overlay svg {
+  width: 44px;
+  height: 44px;
 }
 
 /* --- Back face --- */
