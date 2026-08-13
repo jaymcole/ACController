@@ -52,16 +52,18 @@ const MODES: { value: Mode; label: string }[] = [
 
 const DEFAULT_VANE = 'auto'
 
-// The vertical vane (up/down flap) can hold a fixed position (1 = most
-// horizontal .. 5 = most vertical) instead of sweeping, which matters on units
-// whose stepper motor clicks audibly while swinging.
+// The vertical vane (up/down flap) can hold a fixed position instead of
+// sweeping, which matters on units whose stepper motor clicks audibly while
+// swinging. Wire values are still the firmware's "1".."5" (per
+// IRremoteESP8266's ir_Mitsubishi.h: 1=Highest .. 5=Lowest); the labels just
+// give that scale a human-readable name.
 const VANE_VERT_OPTIONS: { value: VanePosition; label: string }[] = [
   { value: 'auto', label: 'Auto' },
-  { value: '1', label: '1' },
-  { value: '2', label: '2' },
-  { value: '3', label: '3' },
-  { value: '4', label: '4' },
-  { value: '5', label: '5' },
+  { value: '1', label: 'Highest' },
+  { value: '2', label: 'High' },
+  { value: '3', label: 'Middle' },
+  { value: '4', label: 'Low' },
+  { value: '5', label: 'Lowest' },
   { value: 'swing', label: 'Swing' },
 ]
 
