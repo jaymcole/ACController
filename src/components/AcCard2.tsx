@@ -424,7 +424,9 @@ export function AcCard2({
               disabled={pending}
               aria-label={`Turn on ${device.location || 'unit'}`}
             >
-              <PowerIcon />
+              <span className="ac2__off-overlay-icon">
+                <PowerIcon />
+              </span>
             </button>
           )}
         </div>

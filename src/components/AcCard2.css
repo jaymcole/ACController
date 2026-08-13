@@ -233,9 +233,18 @@
 .ac2__off-overlay:disabled {
   cursor: default;
 }
+.ac2__off-overlay-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  border-radius: 50%;
+}
 .ac2__off-overlay svg {
-  width: 44px;
-  height: 44px;
+  width: 32px;
+  height: 32px;
 }
 
 /* --- Back face --- */
