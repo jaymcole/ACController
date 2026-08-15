@@ -200,22 +200,29 @@ export function AcCard2({
   // while a push is in flight so a background poll can't clobber the optimistic
   // state the user just set. Keyed on the concrete values (not object identity),
   // which are primitives, so it only fires on a real change.
+  //
+  // A field the device doesn't know yet syncs as null, and null means "no news",
+  // not "reset to default": the draft keeps its current value. That matters
+  // while a unit is off, where the bridge or the unit's own report may carry
+  // nulls for everything but power — folding those in as defaults would silently
+  // rewrite the user's settings to cool/72°F/auto, which is then what the next
+  // power-on would push.
   const syncPower = base?.power ?? 'off'
-  const syncMode = base?.mode ?? 'cool'
-  const syncTempF = clamp(base?.temp != null ? cToF(base.temp) : DEFAULT_TEMP, TEMP_MIN, TEMP_MAX)
+  const syncMode = base?.mode ?? null
+  const syncTempF = base?.temp != null ? clamp(cToF(base.temp), TEMP_MIN, TEMP_MAX) : null
   const syncVaneVert =
-    base?.vaneVert != null && VALID_VANE_VERT.has(base.vaneVert) ? base.vaneVert : DEFAULT_VANE
+    base?.vaneVert != null && VALID_VANE_VERT.has(base.vaneVert) ? base.vaneVert : null
   const syncVaneHoriz =
-    base?.vaneHoriz != null && VALID_VANE_HORIZ.has(base.vaneHoriz) ? base.vaneHoriz : DEFAULT_VANE
+    base?.vaneHoriz != null && VALID_VANE_HORIZ.has(base.vaneHoriz) ? base.vaneHoriz : null
   useEffect(() => {
     if (pending) return
     setPower(syncPower)
     // reportedConfig may carry 'fan' (fan-only), which isn't a button here —
     // leave the current mode selection as-is rather than forcing an invalid one.
     if (isControllableMode(syncMode)) setMode(syncMode)
-    setTemp(syncTempF)
-    setVaneVert(syncVaneVert)
-    setVaneHoriz(syncVaneHoriz)
+    if (syncTempF != null) setTemp(syncTempF)
+    if (syncVaneVert != null) setVaneVert(syncVaneVert)
+    if (syncVaneHoriz != null) setVaneHoriz(syncVaneHoriz)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [syncPower, syncMode, syncTempF, syncVaneVert, syncVaneHoriz])
 
@@ -227,20 +234,24 @@ export function AcCard2({
   /**
    * Build a full config body from the current draft plus any overrides,
    * preserving fan/vane settings the bridge already knows about.
+   *
+   * Powering off sends the same full body as powering on, differing only in
+   * `power` — mode/temp/fan/vane are optional to the bridge validator when
+   * power is `'off'`, and sending them keeps the unit's stored config intact.
+   * A bare `{ power: 'off' }` would null out every other field, so the next
+   * power-on would have nothing to restore and would come back at defaults
+   * rather than the state the user left the unit in.
    */
   function buildConfig(
     overrides: Partial<Pick<ConfigInput, 'power' | 'mode' | 'temp' | 'vaneVert' | 'vaneHoriz'>>,
   ): ConfigInput {
-    const nextPower = overrides.power ?? power
-    if (nextPower === 'off') return { schema: 1, power: 'off' }
-
     // The draft mode is normally a button mode, but it can be seeded from a
     // reported fan-only ('fan') state; fall back to a valid mode so the push
     // isn't rejected.
     const nextMode = overrides.mode ?? mode
     const cfg: ConfigInput = {
       schema: 1,
-      power: 'on',
+      power: overrides.power ?? power,
       mode: isControllableMode(nextMode) ? nextMode : 'cool',
       // Overrides and draft state are °F; the bridge expects °C.
       temp: fToC(overrides.temp ?? temp),

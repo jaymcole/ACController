@@ -244,18 +244,21 @@ export function carryOverOptionals(cfg: ConfigInput, base: AcConfig | null | und
 }
 
 /**
- * Build the config body for flipping a unit's power. Turning off needs nothing
- * but `power: 'off'`. Turning on requires a mode + temp, so we reuse the
- * device's last-known desired (or reported) config and preserve fan/vane where
- * present, falling back to sensible defaults only when nothing is known.
+ * Build the config body for flipping a unit's power: the device's last-known
+ * state with only `power` changed.
+ *
+ * Powering off deliberately still sends mode/temp/fan/vane (all optional to the
+ * validator when power is `'off'`). A bare `{ power: 'off' }` would overwrite
+ * the bridge's desired config with nulls for every other field, so turning the
+ * unit back on later would have nothing to restore and would fall back to the
+ * defaults below — the unit would come back at 16°C cool instead of where the
+ * user left it. Defaults apply only when nothing is known about the device.
  */
 export function powerConfig(device: Device, power: Power): ConfigInput {
-  if (power === 'off') return { schema: 1, power: 'off' }
-
   const base = device.desiredConfig ?? device.reportedConfig
   const cfg: ConfigInput = {
     schema: 1,
-    power: 'on',
+    power,
     mode: isControllableMode(base?.mode) ? base!.mode : DEFAULT_ON_MODE,
     temp: base?.temp ?? DEFAULT_ON_TEMP,
   }
